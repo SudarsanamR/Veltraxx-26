@@ -8,10 +8,8 @@
 // input key and registered. Each subsequent round uses key_reg (pre-computed)
 // for AddRoundKey while simultaneously computing the NEXT round key.
 //
-// This keeps II = 10 (no SETUP phase) while completely removing key expansion
-// S-boxes from the critical timing path.
-//
-// Critical path: state_reg → SubBytes → ShiftRows → MixColumns → XOR(key_reg) → state_reg
+// Mode signal is locally cached on start with max_fanout constraint to
+// eliminate inter-module cross-hierarchy routing delay and achieve positive WNS.
 //==============================================================================
 
 module aes_core (
@@ -39,7 +37,7 @@ module aes_core (
         .start(start),
         .mode(mode),
         .round_num(round_num),
-        .key_rcon_idx(),       // Not used — we compute our own rcon index
+        .key_rcon_idx(),       // Not used — computed in key-ahead unit
         .is_final_round(is_final_round),
         .round_active(round_active),
         .done(done),
@@ -47,10 +45,16 @@ module aes_core (
     );
 
     //==========================================================================
-    // State & Key Registers
+    // State, Key, and Mode Registers
     //==========================================================================
     reg [127:0] state_reg;
     reg [127:0] key_reg;   // Holds the CURRENT round's key (pre-computed)
+
+    (* max_fanout = 16 *)
+    reg         cached_mode;
+
+    // Active mode: during start cycle use incoming mode; during execution use cached_mode
+    wire active_mode = start ? mode : cached_mode;
 
     //==========================================================================
     // Key-Ahead Rcon Index Computation
@@ -60,7 +64,7 @@ module aes_core (
     //   At round r:  compute K_{r+1} using Rcon[r+1] (enc) / K_{10-r-1} using Rcon[10-r] (dec)
     wire [3:0] ahead_rcon_enc = round_num + 4'd1;             // 0+1=1, 1+1=2, ..., 9+1=10
     wire [3:0] ahead_rcon_dec = 4'd10 - round_num;            // 10-0=10, 10-1=9, ..., 10-9=1
-    wire [3:0] key_rcon_idx   = mode ? ahead_rcon_dec : ahead_rcon_enc;
+    wire [3:0] key_rcon_idx   = active_mode ? ahead_rcon_dec : ahead_rcon_enc;
 
     //==========================================================================
     // On-The-Fly Key Expander (4 S-Boxes, OFF critical path)
@@ -70,7 +74,7 @@ module aes_core (
     wire [127:0] next_key;
 
     aes_key_expand key_exp_inst (
-        .dir_inv(mode),
+        .dir_inv(active_mode),
         .round_idx(key_rcon_idx),
         .key_in(key_exp_in),
         .key_out(next_key)
@@ -87,11 +91,11 @@ module aes_core (
         .state_out(dec_inv_shiftrows_out)
     );
 
-    wire [127:0] subbytes_in = mode ? dec_inv_shiftrows_out : state_reg;
+    wire [127:0] subbytes_in = cached_mode ? dec_inv_shiftrows_out : state_reg;
     wire [127:0] subbytes_out;
 
     aes_subbytes_shared shared_subbytes_inst (
-        .is_inv(mode),
+        .is_inv(cached_mode),
         .state_in(subbytes_in),
         .state_out(subbytes_out)
     );
@@ -104,11 +108,11 @@ module aes_core (
 
     // AddRoundKey uses key_reg (pre-computed, registered, OFF critical path)
     wire [127:0] dec_after_key = subbytes_out ^ key_reg;
-    wire [127:0] mix_in = mode ? dec_after_key : enc_shiftrows_out;
+    wire [127:0] mix_in = cached_mode ? dec_after_key : enc_shiftrows_out;
     wire [127:0] mix_out;
 
     aes_mixcolumns_shared shared_mixcolumns_inst (
-        .is_inv(mode),
+        .is_inv(cached_mode),
         .state_in(mix_in),
         .state_out(mix_out)
     );
@@ -117,30 +121,28 @@ module aes_core (
     wire [127:0] enc_next_state = enc_before_key ^ key_reg;
     wire [127:0] dec_next_state = is_final_round ? dec_after_key : mix_out;
 
-    wire [127:0] round_next_state = mode ? dec_next_state : enc_next_state;
+    wire [127:0] round_next_state = cached_mode ? dec_next_state : enc_next_state;
 
     //==========================================================================
     // Sequential Datapath Logic
     //==========================================================================
     always @(posedge clk) begin
         if (rst) begin
-            state_reg <= 128'h0;
-            key_reg   <= 128'h0;
-            block_out <= 128'h0;
+            state_reg   <= 128'h0;
+            key_reg     <= 128'h0;
+            block_out   <= 128'h0;
+            cached_mode <= 1'b0;
         end else begin
             if (start) begin
                 // Cycle 0: Initial AddRoundKey + key-ahead computation
-                // state_reg gets block_in XOR K0 (enc) or K10 (dec)
-                state_reg <= block_in ^ key;
-                // key_reg gets K1 (enc) or K9 (dec) — pre-computed for round 1
-                // next_key is computed from key_exp_in=key using key_rcon_idx=1 or 10
-                key_reg <= next_key;
+                state_reg   <= block_in ^ key;
+                key_reg     <= next_key;
+                cached_mode <= mode;
             end else if (round_active) begin
                 // Rounds 1-10: use key_reg (pre-computed) for AddRoundKey
                 state_reg <= round_next_state;
                 
                 // Advance key: register next_key for the FOLLOWING round
-                // (key_exp computes from key_reg, result available next cycle)
                 if (!is_final_round)
                     key_reg <= next_key;
 

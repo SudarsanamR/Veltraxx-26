@@ -98,5 +98,27 @@
   3. **Waveform Generation & Evidence Archival**:
      - Generated `outputs/aes_axi_top.vcd` (194 KB) providing cycle-accurate waveform evidence of 10-cycle timing and bus secrecy.
      - Saved simulation evidence to `logs/sim_top.log`.
-  4. **Full Multi-Suite Regression Execution**:
-     - Verified `tb_axi_mm_slave` (7/7 PASS), `tb_aes_core` (7/7 PASS), and `verify_nist_kat.py` (284/284 NIST CAVP vectors PASS).
+
+---
+
+### Phase 5: FPGA Implementation & 100 MHz Timing Closure
+- **Date**: 2026-08-28
+- **Milestones Completed**:
+  1. **Key-Ahead Architecture Optimization**:
+     - Implemented dynamic 1-cycle-ahead round key generation directly in `aes_core.v`.
+     - Removed key expansion S-box logic from the critical datapath path while maintaining exact $II = 10$ cycles.
+  2. **Fanout & Critical Path Routing Isolation**:
+     - Added local `cached_mode` register with `(* max_fanout = 16 *)` inside `aes_core.v` to eliminate high-fanout inter-module routing delays.
+  3. **Full FPGA Implementation Flow (`synth_aes_axi_top.tcl`)**:
+     - Executed synthesis, logic optimization (`opt_design`), physical placement (`place_design`), physical optimization (`phys_opt_design`), and routing (`route_design`).
+  4. **Post-Route Timing Closure Achieved**:
+     - **Worst Negative Slack (WNS)**: **$+0.109\text{ ns}$** (Positive slack, timing met at 100.00 MHz / 10.000 ns).
+     - **Worst Hold Slack (WHS)**: **$+0.157\text{ ns}$** (Hold timing met).
+     - **Failing Endpoints**: **0** (Zero timing violations across all 1,651 endpoints).
+  5. **Resource & Physical Footprint**:
+     - **Block RAM**: **0 BRAM** (100% compliant with zero-BRAM constraint).
+     - **Slice Registers**: **797 FFs** (0.63% of XC7A100T capacity).
+     - **Slice LUTs**: **2,455 Logic LUTs** (4.01% of XC7A100T capacity).
+  6. **Regression Verification**:
+     - 100% PASS on all 284 NIST CAVP test vectors.
+     - 100% PASS on all 9 Full-System AXI4 Integration test suites.

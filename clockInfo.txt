@@ -1,6 +1,6 @@
 -------------------------------------
 | Tool Version : Vivado v.2025.2
-| Date         : Fri Aug 28 17:12:13 2026
+| Date         : Fri Aug 28 21:47:43 2026
 | Host         : lenovo
 | Design       : design_1
 | Device       : xc7a100t-csg324-1--
