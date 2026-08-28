@@ -13,6 +13,7 @@
   - **No Leakage of Secrets**: Intermediate round states and dynamic round keys ($K_1 \dots K_{10}$) have no address mapping and cannot be read across the bus.
   - **Write-Only Key Protection**: The 128-bit key is configured as write-only (`KEY_0..3` reads strictly return `32'h0000_0000`) to prevent readback by co-resident software.
   - **Gated Result Availability**: Result registers (`BLOCK_OUT_0..3`) latch valid data only when the cryptographic operation has finished (`DONE == 1`). While `BUSY == 1`, reads strictly return `32'h0000_0000`.
+  - **Mode Engine Isolation**: Internal IV/counter/feedback/GHASH state in the 6-mode operating subsystem has no register mapping.
 
 ---
 
@@ -22,7 +23,7 @@
 |:------:|:-------------:|:------:|:-----------:|:----------------------------------|
 | `0x00` | `CONTROL`     | R/W    | `0x0000_0000` | Bit 0: `START` (self-clearing), Bit 1: `MODE` (0=Enc, 1=Dec), Bit 2: `CORE_RESET` |
 | `0x04` | `STATUS`      | RO     | `0x0000_0004` | Bit 0: `BUSY`, Bit 1: `DONE`, Bit 2: `READY` (No state leakage) |
-| `0x08` | `CONFIG`      | R/W    | `0x0000_0000` | Reserved / Judge Enhancement configuration |
+| `0x08` | `CONFIG`      | R/W    | `0x0000_0000` | Bits [2:0]: Mode select (0:ECB, 1:CBC, 2:CFB, 3:OFB, 4:CTR, 5:GCM). Reserved bits for future enhancements. |
 | `0x0C` | `RESERVED`    | RO     | `0x0000_0000` | Returns `0x0000_0000` |
 | `0x10` | `KEY_0`       | WO/RW  | `0x0000_0000` | 128-bit Cipher Key Word 0 (`[127:96]`) |
 | `0x14` | `KEY_1`       | WO/RW  | `0x0000_0000` | 128-bit Cipher Key Word 1 (`[95:64]`) |
@@ -54,6 +55,16 @@
 - `Bit 2` (`READY`): Asserted `1` when core is idle and ready for the next block (`READY = ~BUSY`).
 - `Bits 31:3`: Reserved (read as 0).
 
+### 3.3 CONFIG Register (`0x08`)
+- `Bits 2:0` (`MODE_SEL`): Operating mode selector for the 6-mode engine:
+  - `3'b000` = ECB (Electronic Codebook)
+  - `3'b001` = CBC (Cipher Block Chaining)
+  - `3'b010` = CFB (Cipher Feedback)
+  - `3'b011` = OFB (Output Feedback)
+  - `3'b100` = CTR (Counter Mode)
+  - `3'b101` = GCM (Galois/Counter Mode AEAD)
+- `Bits 31:3`: Reserved for future enhancements (read as 0).
+
 ---
 
 ## 4. 128-Bit Word Alignment & Standard Hex Mapping
@@ -67,3 +78,21 @@ $$\text{Data}[127:0] = \{\text{WORD\_0}[31:0], \text{WORD\_1}[31:0], \text{WORD\
   - `BLOCK_IN_1` (`0x24`): `0x44556677`
   - `BLOCK_IN_2` (`0x28`): `0x8899aabb`
   - `BLOCK_IN_3` (`0x2C`): `0xccddeeff`
+
+---
+
+## 5. UART Command Protocol (Nexys A7 Hardware Demo)
+
+The `nexys_a7_uart_top.v` module exposes an interactive UART command interface at 115,200 Baud:
+
+| Command | Format | Description |
+|:-------:|:-------|:------------|
+| `M` | `M` + `<0..5>` + `\n` | Set active cipher mode (0:ECB, 1:CBC, 2:CFB, 3:OFB, 4:CTR, 5:GCM) |
+| `I` | `I` + `<32-hex IV>` + `\n` | Load 128-bit IV / Nonce |
+| `A` | `A` + `<32-hex AAD>` + `\n` | Load and hash 128-bit AAD block (GCM only) |
+| `K` | `K` + `<32-hex Key>` + `\n` | Load 128-bit encryption/decryption key |
+| `E` | `E` + `<32-hex PT>` + `\n` | Encrypt 128-bit plaintext block in active mode |
+| `D` | `D` + `<32-hex CT>` + `\n` | Decrypt 128-bit ciphertext block in active mode |
+| `G` | `G` + `\n` | Request 128-bit GCM Authentication Tag T |
+| `R` | `R` + `\n` | Reset IV, feedback, and counter state |
+| `T` | `T` + `\n` | Run NIST Appendix C.1 hardware self-test |

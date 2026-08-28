@@ -125,24 +125,34 @@
 
 ---
 
-### Phase 6: Hardware Board Demonstration & Real-Time USB-UART Streamer
+### Phase 6: 6-Mode Engine, GCM AEAD, Hardware Demo & Real-Time USB-UART Streamer
 - **Date**: 2026-08-29
 - **Target Hardware**: Digilent Nexys A7 FPGA Board (`xc7a100tcsg324-1`).
 - **Milestones Completed**:
-  1. **Nexys A7 Interactive Top-Level Hardware (`src/top/nexys_a7_uart_top.v`)**:
+  1. **6-Mode Operating Subsystem (`src/top/aes_mode_engine.v`)**:
+     - Implemented all 6 NIST-standard operating modes: ECB, CBC, CFB, OFB, CTR, GCM.
+     - Internal IV/nonce management, counter increment (CTR/GCM), and feedback chaining (CBC/CFB/OFB).
+     - Mode selected via 3-bit `mode_sel` input (CONFIG register or UART `'M'` command).
+  2. **GCM AEAD with GHASH Core (`src/top/ghash_core.v`)**:
+     - Bit-serial 128-step GF(2¹²⁸) multiplier implementing NIST SP 800-38D Algorithm 1.
+     - Reduction polynomial: $P(x) = x^{128} + x^7 + x^2 + x + 1$.
+     - Supports AAD block hashing, ciphertext authentication, and 128-bit tag generation.
+     - Resource cost: < 150 LUTs, zero DSP blocks.
+  3. **Nexys A7 Interactive Top-Level Hardware (`src/top/nexys_a7_uart_top.v`)**:
      - Integrated 115,200 Baud USB-UART receiver/transmitter with center-sampling glitch filters.
-     - Implemented internal AXI4 Master Bridge FSM that translates serial commands (`'E'`, `'D'`, `'T'`) into burst transactions.
+     - Implemented internal AXI4 Master Bridge FSM translating 9 serial commands (`E`/`D`/`K`/`M`/`I`/`A`/`G`/`R`/`T`) into mode-aware AES operations.
      - Integrated time-multiplexed 8-digit 7-segment hex display showing 32-bit output words selected by `SW[1:0]`.
      - Integrated hardware pushbuttons (`BTNC` for NIST test) and 16 status LEDs.
-  2. **Comprehensive Physical Constraints (`constraints/nexys_a7.xdc`)**:
-     - Mapped all 100 MHz clock, CPU reset, FTDI UART, 16 LEDs, 8-digit 7-segment anodes/cathodes, and switches to exact Digilent pin LOCs.
-  3. **Interactive Python Host Streamer (`scripts/aes_live_streamer.py`)**:
+  4. **Comprehensive Physical Constraints (`constraints/nexys_a7.xdc`)**:
+     - Mapped all 100 MHz clock, CPU reset, FTDI UART, 16 LEDs, 8-digit 7-segment anodes/cathodes, pushbuttons, and switches to exact Digilent pin LOCs.
+  5. **Interactive Python Host Streamer (`scripts/aes_live_streamer.py`)**:
      - Auto-detects Nexys A7 USB-UART port.
      - Interactive CLI for streaming custom 128-bit keys and plaintexts in real time.
+     - Supports all 6 operating modes with IV/nonce and AAD input.
      - Live ASCII string encryption and decryption with integrity verification.
      - 1,000-block hardware throughput benchmark tool.
-  4. **Simulation & Bitstream Verification**:
-     - `tb/tb_nexys_a7_uart_top.v` simulated in Icarus Verilog with 100% test pass.
+  6. **Simulation & Bitstream Verification**:
+     - `tb/tb_nexys_a7_uart_top.v` and `tb/tb_nexys_a7_mode_top.v` simulated in Icarus Verilog with 100% test pass across all modes.
      - Full Vivado synthesis, placement, routing, and bitstream generation completed with **0 DRC errors**, **0 Critical Warnings**, **$WNS = +0.146\text{ ns}$**, and total on-chip power of only **0.199 W** (199 mW).
      - Produced flashable bitstream: `outputs/nexys_a7_aes_demo.bit`.
 

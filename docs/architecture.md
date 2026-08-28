@@ -1,5 +1,5 @@
 # PS06 Architecture Specification
-## Hardware AES-128 Symmetric Block Cipher Core with AXI-MM Interface
+## Hardware AES-128 Symmetric Block Cipher Core with AXI-MM Interface & 6-Mode Operating Subsystem
 
 ---
 
@@ -13,6 +13,7 @@ The **PS06 AES-128 AXI-MM Hardware Accelerator** is designed to satisfy the stri
 4. **On-the-Fly Round-Key Generation**: Round keys dynamically produced during execution. Pre-computed BRAM round-key storage is **strictly prohibited**.
 5. **LUT Budget**: Final synthesized design must be **strictly under 1,500 4-input LUTs** on AMD 7-Series FPGA.
 6. **Throughput Target**: At least **1 complete 128-bit block every 10 clock cycles** ($II = 10$).
+7. **6-Mode Operating Subsystem**: Support for ECB, CBC, CFB, OFB, CTR, and GCM (AEAD) operating modes per NIST SP 800-38A/38D.
 
 ---
 
@@ -27,6 +28,9 @@ flowchart TD
     classDef ctrlStyle fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#f8fafc;
     classDef cryptoStyle fill:#831843,stroke:#fb7185,stroke-width:2px,color:#f8fafc;
     classDef keyStyle fill:#78350f,stroke:#fbbf24,stroke-width:2px,color:#f8fafc;
+    classDef modeStyle fill:#3b0764,stroke:#a78bfa,stroke-width:2px,color:#f8fafc;
+    classDef ghashStyle fill:#4a1d96,stroke:#c4b5fd,stroke-width:2px,color:#f8fafc;
+    classDef demoStyle fill:#1e3a5f,stroke:#67e8f9,stroke-width:2px,color:#f8fafc;
 
     subgraph HOST_DOMAIN ["Host / Master Domain"]
         HOST["<b>Host / MicroBlaze / Bus Master</b>"]:::hostStyle
@@ -58,7 +62,7 @@ flowchart TD
             end
 
             subgraph DATAPATH_BLOCK ["Folded 10-Cycle Cryptographic Datapath"]
-                DATAPATH["<b>AES Datapath Transformations</b><br/>• <b>SubBytes / InvSubBytes</b>: 16 Shared S-Boxes<br/>• <b>ShiftRows / InvShiftRows</b>: Pure Wiring (0 LUTs)<br/>• <b>MixColumns / InvMixColumns</b>: Shared GF(2⁸) Multipliers<br/>• <b>AddRoundKey</b>: 128-bit XOR Matrix"]:::cryptoStyle
+                DATAPATH["<b>AES Datapath Transformations</b><br/>• <b>SubBytes / InvSubBytes</b>: 16 Shared S-Boxes (aes_sbox_shared.v)<br/>• <b>ShiftRows / InvShiftRows</b>: Pure Wiring (0 LUTs)<br/>• <b>MixColumns / InvMixColumns</b>: Shared GF(2⁸) Multipliers<br/>• <b>AddRoundKey</b>: 128-bit XOR Matrix"]:::cryptoStyle
             end
 
             KEY_EXP <== "round_key[127:0]<br/>(Synchronized to Round)" ==> DATAPATH
@@ -68,22 +72,65 @@ flowchart TD
         CORE_LAYER -. "block_out[127:0]<br/>(Latched at Cycle 9)" .-> REG_BANK
     end
 
+    subgraph MODE_LAYER ["6-Mode Operating Subsystem (src/top/)"]
+        direction LR
+        MODE_ENG["<b>aes_mode_engine.v</b><br/>• ECB / CBC / CFB / OFB / CTR / GCM<br/>• IV/Nonce Management<br/>• Counter Increment (CTR/GCM)<br/>• Feedback Chain (CBC/CFB/OFB)"]:::modeStyle
+        GHASH["<b>ghash_core.v</b><br/>• GF(2¹²⁸) Multiplier<br/>• NIST SP 800-38D Algorithm 1<br/>• Bit-Serial 128-Step Accumulator<br/>• &lt;150 LUTs, Zero DSP"]:::ghashStyle
+        MODE_ENG <== "GCM Hash Path<br/>(AAD &amp; Ciphertext)" ==> GHASH
+    end
+
+    TOP <== "Core Request/Response<br/>(encrypt/decrypt blocks)" ==> MODE_LAYER
+
+    subgraph DEMO_LAYER ["Nexys A7 Hardware Demo (src/top/nexys_a7_uart_top.v)"]
+        UART_DEMO["<b>nexys_a7_uart_top.v</b><br/>• 115,200 Baud USB-UART Bridge<br/>• AXI4 Master Bridge FSM<br/>• 8-Digit 7-Segment Hex Display<br/>• LED Status &amp; Pushbutton Control<br/>• UART Commands: E/D/K/M/I/A/G/R/T"]:::demoStyle
+    end
+
+    MODE_LAYER <== "Mode-Wrapped AES Operations" ==> DEMO_LAYER
+
     style TOP fill:#0f172a,stroke:#94a3b8,stroke-width:2px,stroke-dasharray: 4 4,color:#f8fafc
     style CORE_LAYER fill:#2e1065,stroke:#c084fc,stroke-width:2px,color:#f8fafc
 ```
 
-### Module Breakdown (`src/`):
-- `src/top/aes_axi_top.v`: System top-level integrating AXI slave, register bank, and AES engine.
-- `src/axi/axi_mm_slave.v`: Full AXI4 memory-mapped handshake engine managing AW, W, B, AR, R channels with burst support.
-- `src/axi/aes_registers.v`: Secure register bank isolating internal cryptographic state.
-- `src/aes/aes_controller.v`: Cycle-accurate FSM orchestrating 10-cycle execution schedule.
-- `src/aes/aes_core.v`: Central core housing the folded datapath and dynamic key expansion.
-- `src/aes/aes_key_expand.v`: Generates $K_1 \dots K_{10}$ on the fly in sync with round operations.
-- `src/aes/aes_sbox.v` & `aes_inv_sbox.v`: Optimized Galois-field / LUT-efficient S-Box implementations.
-- `src/aes/aes_subbytes.v` & `aes_inv_subbytes.v`: State byte substitution arrays.
-- `src/aes/aes_shiftrows.v` & `aes_inv_shiftrows.v`: Combinational wiring permutation.
-- `src/aes/aes_mixcolumns.v` & `aes_inv_mixcolumns.v`: Efficient $GF(2^8)$ matrix multiplication.
-- `src/aes/aes_addroundkey.v`: 128-bit XOR matrix.
+### Complete Module Inventory (`src/`)
+
+#### `src/aes/` — Cryptographic Engine (18 modules)
+
+| Module | File | Purpose |
+|:-------|:-----|:--------|
+| `aes_core` | `aes_core.v` | Central folded 10-cycle datapath housing all transforms and key expansion |
+| `aes_controller` | `aes_controller.v` | Cycle-accurate FSM orchestrating the 10-cycle execution schedule |
+| `aes_key_expand` | `aes_key_expand.v` | On-the-fly round key generation ($K_0 \dots K_{10}$) at runtime |
+| `aes_key_expansion` | `aes_key_expansion.v` | Pure combinational key schedule (all 11 round keys simultaneously) |
+| `aes_sbox` | `aes_sbox.v` | Forward S-Box wrapper |
+| `aes_inv_sbox` | `aes_inv_sbox.v` | Inverse S-Box (256-byte distributed ROM) |
+| `aes_sbox_shared` | `aes_sbox_shared.v` | Unified forward/inverse S-Box (512-byte distributed ROM with MuxF7/F8) |
+| `aes_sbox_canright` | `aes_sbox_canright.v` | Canright composite-field S-Box (GF(2⁴) tower decomposition) |
+| `aes_gf_inv` | `aes_gf_inv.v` | GF(2⁸) multiplicative inverse lookup (256-byte distributed ROM) |
+| `aes_subbytes` | `aes_subbytes.v` | Forward SubBytes (16-byte parallel substitution) |
+| `aes_inv_subbytes` | `aes_inv_subbytes.v` | Inverse SubBytes |
+| `aes_subbytes_shared` | `aes_subbytes_shared.v` | Shared forward/inverse SubBytes (muxed enc/dec) |
+| `aes_shiftrows` | `aes_shiftrows.v` | Forward ShiftRows (pure combinational wiring, 0 LUTs) |
+| `aes_inv_shiftrows` | `aes_inv_shiftrows.v` | Inverse ShiftRows |
+| `aes_mixcolumns` | `aes_mixcolumns.v` | Forward MixColumns (GF(2⁸) matrix multiplication) |
+| `aes_inv_mixcolumns` | `aes_inv_mixcolumns.v` | Inverse MixColumns |
+| `aes_mixcolumns_shared` | `aes_mixcolumns_shared.v` | Shared forward/inverse MixColumns |
+| `aes_addroundkey` | `aes_addroundkey.v` | AddRoundKey (128-bit XOR matrix) |
+
+#### `src/axi/` — AXI4 Interface (2 modules)
+
+| Module | File | Purpose |
+|:-------|:-----|:--------|
+| `axi_mm_slave` | `axi_mm_slave.v` | Full AXI4 memory-mapped handshake engine (AW, W, B, AR, R with burst) |
+| `aes_registers` | `aes_registers.v` | Secure register bank with anti-leakage gating |
+
+#### `src/top/` — Top-Level Wrappers & Mode Engine (4 modules)
+
+| Module | File | Purpose |
+|:-------|:-----|:--------|
+| `aes_axi_top` | `aes_axi_top.v` | System top-level integrating AXI slave, registers, and AES core |
+| `aes_mode_engine` | `aes_mode_engine.v` | 6-mode operating subsystem (ECB/CBC/CFB/OFB/CTR/GCM) |
+| `ghash_core` | `ghash_core.v` | GHASH GF(2¹²⁸) multiplier for GCM authentication tags |
+| `nexys_a7_uart_top` | `nexys_a7_uart_top.v` | Nexys A7 interactive FPGA demo with USB-UART and 7-segment display |
 
 ---
 
@@ -95,8 +142,9 @@ To satisfy the strict **< 1,500 LUT limit** while delivering **$\ge 1$ block per
 1. **Iterative Round Engine**:
    - Instead of unrolling 10 rounds (which requires 160 S-boxes and >10,000 LUTs), a single round engine executes iteratively across 10 clock cycles.
 2. **S-Box Resource Sharing**:
-   - Forward encryption and inverse decryption share sub-expressions or composite field / optimized combinational logic.
-   - S-box logic is shared across the datapath and key expansion where schedule allows, or key expansion utilizes 4 S-boxes while the main round uses 16 parallel S-boxes (compact combinational S-box requires ~25-30 LUTs each, totaling ~500-600 LUTs for 20 S-boxes, comfortably within 1,500 LUTs).
+   - Forward encryption and inverse decryption share a unified 512-byte distributed ROM (`aes_sbox_shared.v`) addressed by `{is_inv, byte_in}`.
+   - Alternative implementations available: Canright composite-field (`aes_sbox_canright.v`) and GF(2⁸) inverse ROM (`aes_gf_inv.v`).
+   - Key expansion utilizes 4 S-boxes while the main round uses 16 parallel S-boxes (~500-600 LUTs for 20 S-boxes).
 3. **Pure Logic Transformations**:
    - `ShiftRows`: Pure combinational rewiring ($0$ LUTs).
    - `AddRoundKey`: Pure 128-bit XOR ($128$ LUTs).
@@ -130,7 +178,29 @@ To achieve an Initiation Interval of 10 cycles ($II = 10$):
 
 ---
 
-## 5. Standard 128-bit State Bit-Slice Mapping
+## 5. 6-Mode Operating Subsystem
+
+The `aes_mode_engine.v` module wraps the AES core to provide all 6 NIST-standard operating modes:
+
+| Mode | Code | Standard | Description | IV Required |
+|:-----|:----:|:---------|:------------|:-----------:|
+| **ECB** | 0 | NIST SP 800-38A | Electronic Codebook (direct block cipher) | No |
+| **CBC** | 1 | NIST SP 800-38A | Cipher Block Chaining (feedback XOR) | Yes |
+| **CFB** | 2 | NIST SP 800-38A | Cipher Feedback (streaming) | Yes |
+| **OFB** | 3 | NIST SP 800-38A | Output Feedback (keystream generator) | Yes |
+| **CTR** | 4 | NIST SP 800-38A | Counter Mode (parallelizable) | Yes (Nonce) |
+| **GCM** | 5 | NIST SP 800-38D | Galois/Counter Mode AEAD (authenticated) | Yes (Nonce) |
+
+### GCM AEAD Features:
+- **GHASH Core** (`ghash_core.v`): Bit-serial 128-step GF(2¹²⁸) multiplier implementing NIST SP 800-38D Algorithm 1.
+- **Reduction Polynomial**: $P(x) = x^{128} + x^7 + x^2 + x + 1$ ($R = \texttt{0xE1000...0}$).
+- **Resource Cost**: < 150 LUTs, zero DSP blocks.
+- **AAD Support**: Processes Additional Authenticated Data blocks before ciphertext.
+- **Tag Generation**: Produces 128-bit authentication tag $T$ for integrity verification.
+
+---
+
+## 6. Standard 128-bit State Bit-Slice Mapping
 
 FIPS-197 column-major matrix mapped strictly across all modules:
 

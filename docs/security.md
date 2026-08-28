@@ -16,10 +16,13 @@ In an SoC environment where the AES-128 core is attached to an AXI Memory-Mapped
    - No diagnostic, test, or debug registers providing visibility into intermediate rounds are implemented in synthesizable RTL.
 4. **Isolated Register Boundary**:
    - Only architecturally required registers exist: Control (write-only trigger / mode), Status (busy/done flags), Key Words (write-only), Input Words (read/write), and Output Words (read-only after done).
-   - Reading `KEY_*` registers can optionally return `0x0000_0000` (write-only security) or latch only the user's initially supplied key without exposing internal expansion states.
-   - Reading `BLOCK_OUT_*` returns valid data **only** when `DONE == 1`. During execution (`BUSY == 1`), `BLOCK_OUT_*` reads return zeroes or latched previous results, never transient round states.
+   - Reading `KEY_*` registers returns `0x0000_0000` (write-only security) to prevent readback by co-resident software.
+   - Reading `BLOCK_OUT_*` returns valid data **only** when `DONE == 1`. During execution (`BUSY == 1`), `BLOCK_OUT_*` reads return zeroes, never transient round states.
 5. **Unmapped Address Protection**:
    - Any read access to unmapped address space (e.g., offsets $> 0x3C$ or reserved gaps) returns `0x0000_0000` with `RRESP = 2'b00` (or `2'b10` SLVERR if strict protocol error response is configured), preventing address-probing side channels.
+6. **Mode Engine Isolation**:
+   - The 6-mode operating subsystem (`aes_mode_engine.v`) maintains internal IV/counter/feedback state strictly within the mode engine. These registers are not mapped to any AXI address and cannot be read by bus masters.
+   - GCM hash subkey $H$ and intermediate GHASH state within `ghash_core.v` are completely internal.
 
 ---
 
@@ -37,8 +40,9 @@ In an SoC environment where the AES-128 core is attached to an AXI Memory-Mapped
           |             axi_mm_slave & aes_registers           |
           |                                                    |
           |  [Public Registers]                                |
-          |   - 0x00: CONTROL (Start, Mode)                    |
+          |   - 0x00: CONTROL (Start, Mode, Reset)             |
           |   - 0x04: STATUS (Busy, Done, Ready)               |
+          |   - 0x08: CONFIG (Mode select, enhancements)       |
           |   - 0x10-0x1C: KEY_IN[3:0] (Write-only to engine)  |
           |   - 0x20-0x2C: BLOCK_IN[3:0] (Input Block)         |
           |   - 0x30-0x3C: BLOCK_OUT[3:0] (Result only on DONE)|
@@ -55,7 +59,22 @@ In an SoC environment where the AES-128 core is attached to an AXI Memory-Mapped
           |  - SubBytes / ShiftRows / MixColumns / AddRoundKey |
           |  - Intermediate Round States (R0..R10)             |
           |                                                    |
-          |  * COMPLETELY INACCESSIBLE FROM AXI INTERCONNECT *  |
+          |  * COMPLETELY INACCESSIBLE FROM AXI INTERCONNECT * |
+          +-------------------------+--------------------------+
+                                    |
+                             ISOLATION BARRIER
+                    (No mode-engine internals cross upward)
+                                    |
+          +-------------------------v--------------------------+
+          |          aes_mode_engine (Private Enclave)          |
+          |                                                    |
+          |  - IV / Nonce Registers (CBC/CFB/OFB/CTR/GCM)     |
+          |  - Counter State (CTR/GCM)                         |
+          |  - Feedback Chain Registers (CBC/CFB/OFB)          |
+          |  - GCM Hash Subkey H = E_K(0^128)                 |
+          |  - GHASH Accumulator State (ghash_core.v)          |
+          |                                                    |
+          |  * COMPLETELY INACCESSIBLE FROM AXI INTERCONNECT * |
           +----------------------------------------------------+
 ```
 
@@ -64,7 +83,10 @@ In an SoC environment where the AES-128 core is attached to an AXI Memory-Mapped
 ## 3. Waveform & Security Verification Checklist
 
 To prove compliance to event judges:
-- [ ] **Testcase 1**: Trigger encryption/decryption and issue continuous AXI read transactions across all address offsets (`0x00` through `0xFF`) while the core is `BUSY`. Verify that no intermediate cipher states appear on `s_axi_rdata`.
-- [ ] **Testcase 2**: Attempt to read key generation internals. Verify that dynamically generated round keys ($K_1 \dots K_{10}$) never appear on `s_axi_rdata`.
-- [ ] **Testcase 3**: Verify that `BLOCK_OUT` registers do not change dynamically during intermediate rounds and only latch the final result when `DONE` is asserted.
+- [x] **Testcase 1**: Trigger encryption/decryption and issue continuous AXI read transactions across all address offsets (`0x00` through `0xFF`) while the core is `BUSY`. Verify that no intermediate cipher states appear on `s_axi_rdata`.
+- [x] **Testcase 2**: Attempt to read key generation internals. Verify that dynamically generated round keys ($K_1 \dots K_{10}$) never appear on `s_axi_rdata`.
+- [x] **Testcase 3**: Verify that `BLOCK_OUT` registers do not change dynamically during intermediate rounds and only latch the final result when `DONE` is asserted.
 - [ ] **Testcase 4**: Capture and archive Vivado waveform screenshots in `outputs/` demonstrating that intermediate cryptographic states remain strictly internal.
+- [x] **Testcase 5**: Verify write-only key protection — reading `KEY_0..3` returns `0x0000_0000`.
+- [x] **Testcase 6**: Verify unmapped address reads return `0x0000_0000` without bus deadlock.
+- [ ] **Testcase 7**: Verify GCM mode internal state (hash subkey $H$, GHASH accumulator) is not observable on the bus during authenticated encryption.
