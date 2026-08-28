@@ -1,4 +1,4 @@
-# PS06 Secure AXI-MM Register Map Specification (August 28 Final Release)
+# PS06 AXI-MM Register Map Specification
 ## Memory-Mapped Interface for AES-128 Hardware Accelerator
 
 ---

@@ -1,4 +1,4 @@
-# PS06 Verification Strategy & Test Plan (August 28 Final Release)
+# PS06 Verification Strategy & Test Plan
 
 ---
 

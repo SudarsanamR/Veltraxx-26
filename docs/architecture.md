@@ -1,4 +1,4 @@
-# PS06 Architecture Specification (August 28 Final Release)
+# PS06 Architecture Specification
 ## Hardware AES-128 Symmetric Block Cipher Core with AXI-MM Interface
 
 ---
