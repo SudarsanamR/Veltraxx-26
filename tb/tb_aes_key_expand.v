@@ -1,284 +1,99 @@
 `timescale 1ns / 1ps
 //==============================================================================
-// Testbench for AES Key Expansion
-// AEGIS Project - ChipVerse '26
-//==============================================================================
-// Verifies all 11 round keys against NIST FIPS 197 test vectors.
-// THIS IS THE MOST CRITICAL TEST - if any round key is wrong, AES fails.
+// Testbench for On-The-Fly AES Key Expander (Forward & Reverse)
+// PS06 AES-128 AXI-MM Hardware Accelerator — VELTRAXX '26
 //==============================================================================
 
-module tb_aes_key_expansion;
+module tb_aes_key_expand;
 
-    //==========================================================================
-    // Test Signals
-    //==========================================================================
-    reg  [127:0] cipher_key;
-    wire [127:0] round_key_0;
-    wire [127:0] round_key_1;
-    wire [127:0] round_key_2;
-    wire [127:0] round_key_3;
-    wire [127:0] round_key_4;
-    wire [127:0] round_key_5;
-    wire [127:0] round_key_6;
-    wire [127:0] round_key_7;
-    wire [127:0] round_key_8;
-    wire [127:0] round_key_9;
-    wire [127:0] round_key_10;
-    
+    reg         dir_inv;
+    reg  [3:0]   round_idx;
+    reg  [127:0] key_in;
+    wire [127:0] key_out;
+
     integer errors;
+    integer r;
 
-    //==========================================================================
-    // Instantiate DUT (Device Under Test)
-    //==========================================================================
-    aes_key_expansion dut (
-        .cipher_key(cipher_key),
-        .round_key_0(round_key_0),
-        .round_key_1(round_key_1),
-        .round_key_2(round_key_2),
-        .round_key_3(round_key_3),
-        .round_key_4(round_key_4),
-        .round_key_5(round_key_5),
-        .round_key_6(round_key_6),
-        .round_key_7(round_key_7),
-        .round_key_8(round_key_8),
-        .round_key_9(round_key_9),
-        .round_key_10(round_key_10)
+    // NIST FIPS-197 Round Keys
+    reg [127:0] nist_keys[0:10];
+
+    aes_key_expand dut (
+        .dir_inv(dir_inv),
+        .round_idx(round_idx),
+        .key_in(key_in),
+        .key_out(key_out)
     );
 
-    //==========================================================================
-    // Test Procedure
-    //==========================================================================
     initial begin
         errors = 0;
         $display("========================================");
-        $display("AES Key Expansion Testbench");
+        $display("On-The-Fly Key Expander Testbench");
         $display("========================================");
-        $display("Verifying all 11 round keys against NIST FIPS 197 Appendix A.1");
-        $display("");
-        
+
+        nist_keys[0]  = 128'h000102030405060708090a0b0c0d0e0f;
+        nist_keys[1]  = 128'hd6aa74fdd2af72fadaa678f1d6ab76fe;
+        nist_keys[2]  = 128'hb692cf0b643dbdf1be9bc5006830b3fe;
+        nist_keys[3]  = 128'hb6ff744ed2c2c9bf6c590cbf0469bf41;
+        nist_keys[4]  = 128'h47f7f7bc95353e03f96c32bcfd058dfd;
+        nist_keys[5]  = 128'h3caaa3e8a99f9deb50f3af57adf622aa;
+        nist_keys[6]  = 128'h5e390f7df7a69296a7553dc10aa31f6b;
+        nist_keys[7]  = 128'h14f9701ae35fe28c440adf4d4ea9c026;
+        nist_keys[8]  = 128'h47438735a41c65b9e016baf4aebf7ad2;
+        nist_keys[9]  = 128'h549932d1f08557681093ed9cbe2c974e;
+        nist_keys[10] = 128'h13111d7fe3944a17f307a78b4d2b30c5;
+
         //----------------------------------------------------------------------
-        // NIST Test Vector: Cipher Key 000102030405060708090a0b0c0d0e0f
+        // Test 1: Forward On-The-Fly Expansion (K0 -> K1 -> ... -> K10)
         //----------------------------------------------------------------------
-        cipher_key = 128'h000102030405060708090a0b0c0d0e0f;
-        #10;  // Wait for combinational logic to settle
-        
-        // Verify Round Key 0 (should equal cipher key)
-        $display("Round Key  0:");
-        $display("  Expected: 000102030405060708090a0b0c0d0e0f");
-        $display("  Got:      %h", round_key_0);
-        if (round_key_0 != 128'h000102030405060708090a0b0c0d0e0f) begin
-            $display("  FAIL: Round key 0 mismatch");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
+        $display("\n--- Test 1: Forward On-The-Fly Expansion (K0 -> K10) ---");
+        dir_inv = 0;
+        key_in = nist_keys[0];
+
+        for (r = 1; r <= 10; r = r + 1) begin
+            round_idx = r;
+            #10;
+            if (key_out !== nist_keys[r]) begin
+                $display("  FAIL: Round %0d key mismatch", r);
+                $display("    Expected: %h", nist_keys[r]);
+                $display("    Got:      %h", key_out);
+                errors = errors + 1;
+            end else begin
+                $display("  PASS: Round %0d key match (%h)", r, key_out);
+            end
+            key_in = key_out; // Chain next step
         end
-        $display("");
-        
-        // Verify Round Key 1
-        $display("Round Key  1:");
-        $display("  Expected: d6aa74fdd2af72fadaa678f1d6ab76fe");
-        $display("  Got:      %h", round_key_1);
-        if (round_key_1 != 128'hd6aa74fdd2af72fadaa678f1d6ab76fe) begin
-            $display("  FAIL: Round key 1 mismatch");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
-        // Verify Round Key 2
-        $display("Round Key  2:");
-        $display("  Expected: b692cf0b643dbdf1be9bc5006830b3fe");
-        $display("  Got:      %h", round_key_2);
-        if (round_key_2 != 128'hb692cf0b643dbdf1be9bc5006830b3fe) begin
-            $display("  FAIL: Round key 2 mismatch");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
-        // Verify Round Key 3
-        $display("Round Key  3:");
-        $display("  Expected: b6ff744ed2c2c9bf6c590cbf0469bf41");
-        $display("  Got:      %h", round_key_3);
-        if (round_key_3 != 128'hb6ff744ed2c2c9bf6c590cbf0469bf41) begin
-            $display("  FAIL: Round key 3 mismatch");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
-        // Verify Round Key 4
-        $display("Round Key  4:");
-        $display("  Expected: 47f7f7bc95353e03f96c32bcfd058dfd");
-        $display("  Got:      %h", round_key_4);
-        if (round_key_4 != 128'h47f7f7bc95353e03f96c32bcfd058dfd) begin
-            $display("  FAIL: Round key 4 mismatch");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
-        // Verify Round Key 5
-        $display("Round Key  5:");
-        $display("  Expected: 3caaa3e8a99f9deb50f3af57adf622aa");
-        $display("  Got:      %h", round_key_5);
-        if (round_key_5 != 128'h3caaa3e8a99f9deb50f3af57adf622aa) begin
-            $display("  FAIL: Round key 5 mismatch");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
-        // Verify Round Key 6
-        $display("Round Key  6:");
-        $display("  Expected: 5e390f7df7a69296a7553dc10aa31f6b");
-        $display("  Got:      %h", round_key_6);
-        if (round_key_6 != 128'h5e390f7df7a69296a7553dc10aa31f6b) begin
-            $display("  FAIL: Round key 6 mismatch");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
-        // Verify Round Key 7
-        $display("Round Key  7:");
-        $display("  Expected: 14f9701ae35fe28c440adf4d4ea9c026");
-        $display("  Got:      %h", round_key_7);
-        if (round_key_7 != 128'h14f9701ae35fe28c440adf4d4ea9c026) begin
-            $display("  FAIL: Round key 7 mismatch");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
-        // Verify Round Key 8
-        $display("Round Key  8:");
-        $display("  Expected: 47438735a41c65b9e016baf4aebf7ad2");
-        $display("  Got:      %h", round_key_8);
-        if (round_key_8 != 128'h47438735a41c65b9e016baf4aebf7ad2) begin
-            $display("  FAIL: Round key 8 mismatch");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
-        // Verify Round Key 9
-        $display("Round Key  9:");
-        $display("  Expected: 549932d1f08557681093ed9cbe2c974e");
-        $display("  Got:      %h", round_key_9);
-        if (round_key_9 != 128'h549932d1f08557681093ed9cbe2c974e) begin
-            $display("  FAIL: Round key 9 mismatch");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
-        // Verify Round Key 10
-        $display("Round Key 10:");
-        $display("  Expected: 13111d7fe3944a17f307a78b4d2b30c5");
-        $display("  Got:      %h", round_key_10);
-        if (round_key_10 != 128'h13111d7fe3944a17f307a78b4d2b30c5) begin
-            $display("  FAIL: Round key 10 mismatch");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
+
         //----------------------------------------------------------------------
-        // Test 2: All Zeros Key
+        // Test 2: Reverse On-The-Fly Expansion (K10 -> K9 -> ... -> K0)
         //----------------------------------------------------------------------
-        $display("========================================");
-        $display("Test 2: All Zeros Cipher Key");
-        $display("========================================");
-        
-        cipher_key = 128'h00000000000000000000000000000000;
-        #10;
-        
-        // Round key 0 should equal the cipher key
-        $display("Round Key  0:");
-        $display("  Expected: 00000000000000000000000000000000");
-        $display("  Got:      %h", round_key_0);
-        if (round_key_0 != 128'h00000000000000000000000000000000) begin
-            $display("  FAIL");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
+        $display("\n--- Test 2: Reverse On-The-Fly Expansion (K10 -> K0) ---");
+        dir_inv = 1;
+        key_in = nist_keys[10];
+
+        for (r = 10; r >= 1; r = r - 1) begin
+            round_idx = r;
+            #10;
+            if (key_out !== nist_keys[r-1]) begin
+                $display("  FAIL: Reverse Round %0d -> %0d key mismatch", r, r-1);
+                $display("    Expected: %h", nist_keys[r-1]);
+                $display("    Got:      %h", key_out);
+                errors = errors + 1;
+            end else begin
+                $display("  PASS: Reverse Round %0d -> %0d key match (%h)", r, r-1, key_out);
+            end
+            key_in = key_out; // Chain next step
         end
-        $display("");
-        
-        // Round key 1 should be derived correctly
-        // Expected: 62636363626363636263636362636363
-        $display("Round Key  1:");
-        $display("  Expected: 62636363626363636263636362636363");
-        $display("  Got:      %h", round_key_1);
-        if (round_key_1 != 128'h62636363626363636263636362636363) begin
-            $display("  FAIL");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
-        //----------------------------------------------------------------------
-        // Test 3: All Ones Key
-        //----------------------------------------------------------------------
-        $display("========================================");
-        $display("Test 3: All Ones Cipher Key");
-        $display("========================================");
-        
-        cipher_key = 128'hffffffffffffffffffffffffffffffff;
-        #10;
-        
-        // Round key 0 should equal the cipher key
-        $display("Round Key  0:");
-        $display("  Expected: ffffffffffffffffffffffffffffffff");
-        $display("  Got:      %h", round_key_0);
-        if (round_key_0 != 128'hffffffffffffffffffffffffffffffff) begin
-            $display("  FAIL");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
-        // Round key 1 should be derived correctly
-        // Expected: e8e9e9e917161616e8e9e9e91a191916
-        $display("Round Key  1:");
-        $display("  Expected: he8e9e9e917161616e8e9e9e917161616");
-        $display("  Got:      %h", round_key_1);
-        if (round_key_1 != 128'he8e9e9e917161616e8e9e9e917161616) begin
-            $display("  FAIL");
-            errors = errors + 1;
-        end else begin
-            $display("  PASS");
-        end
-        $display("");
-        
+
         //----------------------------------------------------------------------
         // Final Report
         //----------------------------------------------------------------------
-        $display("========================================");
+        $display("\n========================================");
         if (errors == 0) begin
-            $display("ALL TESTS PASSED");
-            $display("Key Expansion module is verified and ready");
-            $display("All 11 NIST round keys are correct!");
+            $display("ALL TESTS PASSED: On-The-Fly Key Expander Verified!");
         end else begin
-            $display("TESTS FAILED: %0d errors detected", errors);
-            $display("CRITICAL: Review key expansion logic");
-            $display("If round keys are wrong, AES will fail");
+            $display("TESTS FAILED: %0d errors", errors);
         end
         $display("========================================");
-        
         $finish;
     end
 
