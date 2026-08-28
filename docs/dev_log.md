@@ -122,3 +122,27 @@
   6. **Regression Verification**:
      - 100% PASS on all 284 NIST CAVP test vectors.
      - 100% PASS on all 9 Full-System AXI4 Integration test suites.
+
+---
+
+### Phase 6: Hardware Board Demonstration & Real-Time USB-UART Streamer
+- **Date**: 2026-08-29
+- **Target Hardware**: Digilent Nexys A7 FPGA Board (`xc7a100tcsg324-1`).
+- **Milestones Completed**:
+  1. **Nexys A7 Interactive Top-Level Hardware (`src/top/nexys_a7_uart_top.v`)**:
+     - Integrated 115,200 Baud USB-UART receiver/transmitter with center-sampling glitch filters.
+     - Implemented internal AXI4 Master Bridge FSM that translates serial commands (`'E'`, `'D'`, `'T'`) into burst transactions.
+     - Integrated time-multiplexed 8-digit 7-segment hex display showing 32-bit output words selected by `SW[1:0]`.
+     - Integrated hardware pushbuttons (`BTNC` for NIST test) and 16 status LEDs.
+  2. **Comprehensive Physical Constraints (`constraints/nexys_a7.xdc`)**:
+     - Mapped all 100 MHz clock, CPU reset, FTDI UART, 16 LEDs, 8-digit 7-segment anodes/cathodes, and switches to exact Digilent pin LOCs.
+  3. **Interactive Python Host Streamer (`scripts/aes_live_streamer.py`)**:
+     - Auto-detects Nexys A7 USB-UART port.
+     - Interactive CLI for streaming custom 128-bit keys and plaintexts in real time.
+     - Live ASCII string encryption and decryption with integrity verification.
+     - 1,000-block hardware throughput benchmark tool.
+  4. **Simulation & Bitstream Verification**:
+     - `tb/tb_nexys_a7_uart_top.v` simulated in Icarus Verilog with 100% test pass.
+     - Full Vivado synthesis, placement, routing, and bitstream generation completed with **0 DRC errors**, **0 Critical Warnings**, **$WNS = +0.146\text{ ns}$**, and total on-chip power of only **0.199 W** (199 mW).
+     - Produced flashable bitstream: `outputs/nexys_a7_aes_demo.bit`.
+
