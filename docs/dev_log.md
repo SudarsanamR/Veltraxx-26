@@ -31,3 +31,48 @@
      - Configured [.gitignore](.gitignore) to exclude Vivado build dumps, simulation temporaries, and internal instructions (`ps06_ai_agent_instructions.md`).
   5. **Git Repository Initialization**:
      - Initialized local Git repository and created initial Phase 0 baseline commit.
+
+---
+
+### Phase 1: AES Functional Baseline
+- **Date**: 2026-08-28
+- **Milestones Completed**:
+  1. Extracted atomic NIST S-box lookup module (`aes_sbox.v`) and inverse S-box (`aes_inv_sbox.v`).
+  2. Implemented AES transformation layers: `aes_subbytes.v`, `aes_shiftrows.v`, `aes_mixcolumns.v`, `aes_addroundkey.v`.
+  3. Implemented inverse transformations: `aes_inv_subbytes.v`, `aes_inv_shiftrows.v`, `aes_inv_mixcolumns.v`.
+  4. Verified module-level self-checking testbenches (`tb_aes_sbox.v`, `tb_aes_primitives.v`).
+
+---
+
+### Phase 2: Performance & Area Optimization (< 1,500 LUTs, 10-Cycle Datapath)
+- **Date**: 2026-08-28
+- **Milestones Completed**:
+  1. **On-the-Fly Round-Key Expander (`aes_key_expand.v`)**:
+     - Forward and reverse on-the-fly round key generation using only 4 shared S-boxes.
+     - Saves ~1,000 LUTs compared to static unrolled key expansion; zero BRAM utilized.
+  2. **Folded Dual-Mode Datapath (`aes_core.v`, `aes_sbox_shared.v`, `aes_subbytes_shared.v`)**:
+     - Merged forward and inverse S-box datapaths to eliminate redundant S-box units.
+  3. **10-Cycle Controller (`aes_controller.v`)**:
+     - Cycle-accurate FSM orchestrating 10-cycle transformation schedule with $II = 10$ and 1.28 Gbps throughput @ 100MHz.
+  4. **NIST CAVP Verification**:
+     - Verified 284 NIST CAVP test vectors (`verify_nist_kat.py`) with 100% pass rate.
+     - Confirmed `decrypt(encrypt(P, K), K) == P` round-trip correctness.
+
+---
+
+### Phase 3: Secure Full AXI4 Interface & Anti-Leakage Verification
+- **Date**: 2026-08-28
+- **Milestones Completed**:
+  1. **Full AXI4-MM Slave Engine (`src/axi/axi_mm_slave.v`)**:
+     - Implemented complete 5-channel AXI4 memory-mapped slave with transaction ID reflection (`awid` $\to$ `bid`, `arid` $\to$ `rid`).
+     - Supports single-beat access (`len = 0`) and 4-beat burst transfers (`len = 3`, `INCR`) for streaming 128-bit blocks.
+     - Generates `rlast` and validates `wlast` during burst cycles.
+  2. **Secure Memory-Mapped Register Bank (`src/axi/aes_registers.v`)**:
+     - Implemented `CONTROL` (0x00), `STATUS` (0x04), `CONFIG` (0x08), `KEY_0..3` (0x10-0x1C), `BLOCK_IN_0..3` (0x20-0x2C), `BLOCK_OUT_0..3` (0x30-0x3C).
+  3. **Hardware Anti-Leakage Hardening**:
+     - **Write-Only Key Protection**: Reading `KEY_0..3` strictly returns `0x0000_0000`.
+     - **Zero Intermediate State Exposure**: Internal 10-round states and round keys are strictly isolated in `aes_core`.
+     - **Gated Output Availability**: Reading `BLOCK_OUT_0..3` while `BUSY == 1` strictly returns `0x0000_0000`.
+     - **Unmapped Address Protection**: Probing unmapped registers returns `0x0000_0000`.
+  4. **Comprehensive Self-Checking Testbench (`tb/tb_axi_mm_slave.v`)**:
+     - All 7 AXI4 protocol and security test cases passed cleanly. Output archived to `logs/sim_axi.log`.

@@ -8,7 +8,7 @@
 The **PS06 AES-128 AXI-MM Hardware Accelerator** is designed to satisfy the strict VELTRAXX '26 August 28 Final Challenge Specifications:
 
 1. **NIST Compliance**: Full standard AES-128 encryption and decryption with SubBytes, ShiftRows, MixColumns, AddRoundKey, and corresponding inverse transformations.
-2. **AXI-MM System Interface**: AXI4-Lite Memory-Mapped slave for seamless SoC integration.
+2. **Full AXI4-MM System Interface**: Full AXI4 Memory-Mapped slave with burst transfer support (`INCR`/`FIXED`), transaction ID reflection, and `wlast`/`rlast` management for seamless high-performance SoC integration.
 3. **Hardened Security**: Complete isolation of internal intermediate states and dynamic round keys from bus read access.
 4. **On-the-Fly Round-Key Generation**: Round keys dynamically produced during execution. Pre-computed BRAM round-key storage is **strictly prohibited**.
 5. **LUT Budget**: Final synthesized design must be **strictly under 1,500 4-input LUTs** on AMD 7-Series FPGA.

@@ -15,7 +15,7 @@ Verification proceeds strictly bottom-up to guarantee module-level isolation:
     |
 [Level 4] AES Core 10-Cycle Datapath & FSM (tb_aes_core.v)
     |
-[Level 5] AXI4-Lite Slave Handshake & Secure Register Bank (tb_axi_mm_slave.v)
+[Level 5] Full AXI4 Slave Handshake & Secure Register Bank (tb_axi_mm_slave.v)
     |
 [Level 6] Full System Top-Level Integration (tb_aes_axi_top.v)
     |
