@@ -1,5 +1,5 @@
 # PS06: Hardware AES-128 Symmetric Block Cipher Core with AXI-MM Interface
-### VELTRAXX ’26 Hackathon Problem Statement 06 — FPGA Hardware Prototype
+### VELTRAXX '26 Hackathon Problem Statement 06
 
 A high-throughput, resource-constrained, and cryptographically secure AES-128 encryption and decryption accelerator implemented in synthesizable Verilog, featuring an AXI-MM (AXI4-Lite) bus interface for SoC integration. Designed and validated for AMD/Xilinx 7-Series FPGAs (Digilent Nexys A7).
 
