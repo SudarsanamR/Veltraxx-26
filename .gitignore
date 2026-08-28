@@ -1,0 +1,42 @@
+# Hackathon Instructions & Private Agent Notes
+ps06_ai_agent_instructions.md
+
+# Vivado generated files and directories
+.Xil/
+*.jou
+*.log
+*.str
+*.bit
+*.bin
+*.ltx
+vivado_*
+runs/
+cache/
+hw/
+.cache/
+hd_visual/
+*.pb
+*.dcp
+*.rpt
+
+# Simulator build & temporary files (Vivado XSIM, Icarus Verilog)
+xsim.dir/
+*.vcd
+*.wdb
+*.vvp
+*.out
+webtalk*.xml
+webtalk*.log
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+
+# Ignore generated outputs/logs except .gitkeep
+outputs/*
+!outputs/.gitkeep
+logs/*
+!logs/.gitkeep
