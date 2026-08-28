@@ -1,3 +1,4 @@
+`timescale 1ns / 1ps
 /* square in GF(2^2), using normal basis [Omega^2,Omega]
  * inverse is the same as square in GF(2^2), using any normal basis
  */
