@@ -481,7 +481,8 @@ module tb_aes_axi_top;
         // Test 4: NIST FIPS-197 Appendix C.1 Decryption via Full AXI4
         //----------------------------------------------------------------------
         $display("\n--- Test 4: NIST Appendix C.1 Decryption via Full AXI4 ---");
-        // Load K10: 13111d7fe3944a17f307a78b4d2b30c5
+        // Load K10 (last round key for decryption): 13111d7fe3944a17f307a78b4d2b30c5
+        // On-the-fly key expansion steps K10 -> K9 -> ... -> K0 during decryption
         axi4_write_burst_4(
             4'hC, 32'h0000_0010,
             32'h1311_1d7f, 32'he394_4a17, 32'hf307_a78b, 32'h4d2b_30c5
