@@ -5,12 +5,14 @@
 
 ## 1. Interface Protocol & Security Principles
 
-- **Protocol**: AXI4-Lite Slave (32-bit data bus, 32-bit address space).
+- **Protocol**: Full AXI4 Memory-Mapped Slave (32-bit data bus, 32-bit address space, with support for single-beat and multi-beat bursts).
+- **Channels**: 5 standard AXI4 channels (AW, W, B, AR, R) with Transaction ID reflection (`awid` $\to$ `bid`, `arid` $\to$ `rid`).
+- **Burst Modes**: Supports `INCR` (2'b01) and `FIXED` (2'b00) burst transfers up to 256 beats. Standard 4-beat burst transfers (`len = 3`, `INCR`) allow streaming 128-bit Keys, Plaintext, and Ciphertext in a single transaction.
 - **Word Alignment**: Register offsets are 4-byte aligned (`ADDR[1:0] == 2'b00`).
 - **Security Hardening**:
   - **No Leakage of Secrets**: Intermediate round states and dynamic round keys ($K_1 \dots K_{10}$) have no address mapping and cannot be read across the bus.
-  - **Write-Only Key Protection**: The 128-bit key can be configured as write-only (`KEY_0..3` reads return `32'h0000_0000`) to prevent readback by co-resident software.
-  - **Gated Result Availability**: Result registers (`BLOCK_OUT_0..3`) latch valid data only when the cryptographic operation has finished (`DONE == 1`).
+  - **Write-Only Key Protection**: The 128-bit key is configured as write-only (`KEY_0..3` reads strictly return `32'h0000_0000`) to prevent readback by co-resident software.
+  - **Gated Result Availability**: Result registers (`BLOCK_OUT_0..3`) latch valid data only when the cryptographic operation has finished (`DONE == 1`). While `BUSY == 1`, reads strictly return `32'h0000_0000`.
 
 ---
 

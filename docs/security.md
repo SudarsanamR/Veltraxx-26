@@ -31,7 +31,7 @@ In an SoC environment where the AES-128 core is attached to an AXI Memory-Mapped
           |  (Bus Masters: MicroBlaze, Host, DMA, Peripheral)   |
           +-------------------------+--------------------------+
                                     |
-                    AXI4-Lite Bus (AW, W, B, AR, R)
+                    Full AXI4 Bus (AW, W, B, AR, R with Burst Support)
                                     |
           +-------------------------v--------------------------+
           |             axi_mm_slave & aes_registers           |

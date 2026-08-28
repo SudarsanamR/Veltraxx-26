@@ -8,7 +8,7 @@
 The **PS06 AES-128 AXI-MM Hardware Accelerator** is designed to satisfy the strict VELTRAXX '26 August 28 Final Challenge Specifications:
 
 1. **NIST Compliance**: Full standard AES-128 encryption and decryption with SubBytes, ShiftRows, MixColumns, AddRoundKey, and corresponding inverse transformations.
-2. **AXI-MM System Interface**: AXI4-Lite Memory-Mapped slave for seamless SoC integration.
+2. **Full AXI4-MM System Interface**: Full AXI4 Memory-Mapped slave with burst transfer support (`INCR`/`FIXED`), transaction ID reflection, and `wlast`/`rlast` management for seamless high-performance SoC integration.
 3. **Hardened Security**: Complete isolation of internal intermediate states and dynamic round keys from bus read access.
 4. **On-the-Fly Round-Key Generation**: Round keys dynamically produced during execution. Pre-computed BRAM round-key storage is **strictly prohibited**.
 5. **LUT Budget**: Final synthesized design must be **strictly under 1,500 4-input LUTs** on AMD 7-Series FPGA.
@@ -18,51 +18,63 @@ The **PS06 AES-128 AXI-MM Hardware Accelerator** is designed to satisfy the stri
 
 ## 2. System Architecture & Modular Hierarchy
 
-```
-                    Host / MicroBlaze / Bus Master
-                                  |
-                                AXI-MM
-                                  |
-                     +------------v------------+
-                     |       aes_axi_top       |  (src/top/aes_axi_top.v)
-                     +------------+------------+
-                                  |
-            +---------------------+---------------------+
-            |                                           |
-    +-------v-------+                           +-------v-------+
-    |  axi_mm_slave |                           | aes_registers |
-    | (Handshake:   |<-------- Internal ------->|  (Memory-     |
-    |  AW, W, B,    |          Register         |   Mapped      |
-    |  AR, R logic) |            Bus            |   Bank)       |
-    +---------------+                           +-------+-------+
-                                                        |
-                                            Public Signals Only
-                                            (Start, Mode, Key, BlockIn)
-                                                        |
-                                                        v
-                                                +-------+-------+
-                                                | aes_controller|  (src/aes/aes_controller.v)
-                                                +-------+-------+
-                                                        |
-                                             FSM Control & Timings
-                                                        |
-                                                        v
-                                                +-------+-------+
-                                                |   aes_core    |  (src/aes/aes_core.v)
-                                                +-------+-------+
-                                                        |
-                                     +------------------+------------------+
-                                     |                                     |
-                             +-------v-------+                     +-------v-------+
-                             | aes_key_expand|                     |  AES Datapath |
-                             | (On-the-fly)  |                     | (Folded / AR, |
-                             +---------------+                     |  SB, SR, MC)  |
-                                                                   +---------------+
+```mermaid
+flowchart TD
+    %% Styling Classes
+    classDef hostStyle fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef axiStyle fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#f8fafc;
+    classDef regStyle fill:#1e3a5f,stroke:#60a5fa,stroke-width:2px,color:#f8fafc;
+    classDef ctrlStyle fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#f8fafc;
+    classDef cryptoStyle fill:#831843,stroke:#fb7185,stroke-width:2px,color:#f8fafc;
+    classDef keyStyle fill:#78350f,stroke:#fbbf24,stroke-width:2px,color:#f8fafc;
+
+    subgraph HOST_DOMAIN ["Host / Master Domain"]
+        HOST["<b>Host / MicroBlaze / Bus Master</b>"]:::hostStyle
+    end
+
+    HOST == "Full AXI4 Bus<br/>[AW, W, B, AR, R channels &amp; Burst]" ==> TOP
+
+    subgraph TOP ["aes_axi_top (src/top/aes_axi_top.v)"]
+        
+        subgraph INTERFACE_LAYER ["Full AXI4 Interface &amp; Register Domain (src/axi/)"]
+            direction LR
+            AXI_SLAVE["<b>axi_mm_slave.v</b><br/>• Full AXI4 Handshake Engine<br/>• Burst Support (INCR / FIXED)<br/>• Transaction ID Reflection (awid/arid)<br/>• wlast / rlast Management"]:::axiStyle
+            REG_BANK[("<b>aes_registers.v</b><br/>• Secure Register Bank (32-bit words)<br/>• Control (0x00) &amp; Status (0x04)<br/>• Write-Only Key Regs (0x10-0x1C)<br/>• Block In (0x20-0x2C) &amp; Out (0x30-0x3C)<br/>• Anti-Leakage Gate (0 during BUSY)")]:::regStyle
+            AXI_SLAVE <== "Internal Register Bus<br/>[addr, wdata, rdata, we]" ==> REG_BANK
+        end
+
+        subgraph CONTROL_LAYER ["Control &amp; FSM Scheduling (src/aes/)"]
+            AES_CTRL["<b>aes_controller.v</b><br/>• Cycle-Accurate 10-Cycle FSM<br/>• Round Sequencing (r = 0..9)<br/>• SubBytes / MixColumns Muxing<br/>• Handshake Pulse Synchronization"]:::ctrlStyle
+        end
+
+        REG_BANK -- "Public Signals Only<br/>start, mode, key[127:0], block_in[127:0]" --> AES_CTRL
+        AES_CTRL -. "busy, done" .-> REG_BANK
+
+        subgraph CORE_LAYER ["Isolated Cryptographic Engine — aes_core (src/aes/aes_core.v)"]
+            direction TB
+            
+            subgraph KEY_EXP_BLOCK ["On-The-Fly Key Expansion (src/aes/aes_key_expand.v)"]
+                KEY_EXP["<b>aes_key_expand.v</b><br/>• Dynamic Round Key Generation (K0..K10)<br/>• 4 Shared SubWord S-Boxes<br/>• RotWord &amp; Rcon Generator<br/>• Zero BRAM Utilization"]:::keyStyle
+            end
+
+            subgraph DATAPATH_BLOCK ["Folded 10-Cycle Cryptographic Datapath"]
+                DATAPATH["<b>AES Datapath Transformations</b><br/>• <b>SubBytes / InvSubBytes</b>: 16 Shared S-Boxes<br/>• <b>ShiftRows / InvShiftRows</b>: Pure Wiring (0 LUTs)<br/>• <b>MixColumns / InvMixColumns</b>: Shared GF(2⁸) Multipliers<br/>• <b>AddRoundKey</b>: 128-bit XOR Matrix"]:::cryptoStyle
+            end
+
+            KEY_EXP <== "round_key[127:0]<br/>(Synchronized to Round)" ==> DATAPATH
+        end
+
+        AES_CTRL == "FSM Controls &amp; Timing<br/>[round, mux_sel, key_load]" ==> CORE_LAYER
+        CORE_LAYER -. "block_out[127:0]<br/>(Latched at Cycle 9)" .-> REG_BANK
+    end
+
+    style TOP fill:#0f172a,stroke:#94a3b8,stroke-width:2px,stroke-dasharray: 4 4,color:#f8fafc
+    style CORE_LAYER fill:#2e1065,stroke:#c084fc,stroke-width:2px,color:#f8fafc
 ```
 
 ### Module Breakdown (`src/`):
 - `src/top/aes_axi_top.v`: System top-level integrating AXI slave, register bank, and AES engine.
-- `src/axi/axi_mm_slave.v`: Compliant AXI4-Lite handshake engine managing AW, W, B, AR, R channels.
+- `src/axi/axi_mm_slave.v`: Full AXI4 memory-mapped handshake engine managing AW, W, B, AR, R channels with burst support.
 - `src/axi/aes_registers.v`: Secure register bank isolating internal cryptographic state.
 - `src/aes/aes_controller.v`: Cycle-accurate FSM orchestrating 10-cycle execution schedule.
 - `src/aes/aes_core.v`: Central core housing the folded datapath and dynamic key expansion.
