@@ -76,3 +76,27 @@
      - **Unmapped Address Protection**: Probing unmapped registers returns `0x0000_0000`.
   4. **Comprehensive Self-Checking Testbench (`tb/tb_axi_mm_slave.v`)**:
      - All 7 AXI4 protocol and security test cases passed cleanly. Output archived to `logs/sim_axi.log`.
+
+---
+
+### Phase 4: Full System Integration & Verification
+- **Date**: 2026-08-28
+- **Milestones Completed**:
+  1. **Top-Level SoC Accelerator Wrapper (`src/top/aes_axi_top.v`)**:
+     - Seamlessly integrated `axi_mm_slave.v`, `aes_registers.v`, and `aes_core.v`.
+     - Standard Full AXI4 bus interface (AW, W, B, AR, R) with dedicated `interrupt` pin for completion notification.
+  2. **System-Level Self-Checking Testbench (`tb/tb_aes_axi_top.v`)**:
+     - 100% PASS on all 9 test suites:
+       - Single register R/W and Status flag verification.
+       - Write-only secret key security verification.
+       - Unmapped address space isolation verification.
+       - NIST FIPS-197 Appendix C.1 Encryption via Full AXI4 burst operations.
+       - NIST FIPS-197 Appendix C.1 Decryption via Full AXI4 burst operations.
+       - Full Round-Trip verification ($\text{Decrypt}(\text{Encrypt}(P, K), K) == P$).
+       - 10-Cycle Datapath Throughput proof ($II = 10$, 1.28 Gbps sustained @ 100MHz).
+       - Zero intermediate state bus leakage during active execution (`BUSY=1`).
+  3. **Waveform Generation & Evidence Archival**:
+     - Generated `outputs/aes_axi_top.vcd` (194 KB) providing cycle-accurate waveform evidence of 10-cycle timing and bus secrecy.
+     - Saved simulation evidence to `logs/sim_top.log`.
+  4. **Full Multi-Suite Regression Execution**:
+     - Verified `tb_axi_mm_slave` (7/7 PASS), `tb_aes_core` (7/7 PASS), and `verify_nist_kat.py` (284/284 NIST CAVP vectors PASS).

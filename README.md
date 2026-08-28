@@ -63,6 +63,12 @@ ps06_aes/
 
 ## 4. Simulation & Build Instructions
 
+### Running Top-Level SoC Integration Simulation:
+```bash
+iverilog -g2012 -o sim_top.out src/aes/*.v src/axi/*.v src/top/*.v tb/tb_aes_axi_top.v
+vvp sim_top.out
+```
+
 ### Running Full AXI4 Slave & Security Anti-Leakage Simulation:
 ```bash
 iverilog -g2012 -o sim_axi.out src/aes/*.v src/axi/*.v tb/tb_axi_mm_slave.v
@@ -88,7 +94,7 @@ python3 tb/verify_nist_kat.py
 - [x] **Phase 1**: AES Functional Baseline (S-Box, Primitives, Key Expansion, Core Datapath)
 - [x] **Phase 2**: Performance & Resource Optimization (< 1,500 LUTs, 10-Cycle Throughput)
 - [x] **Phase 3**: Secure Full AXI4 Interface & Anti-Leakage Verification
-- [ ] **Phase 4**: Full Top-Level Integration & Regression
+- [x] **Phase 4**: Full Top-Level Integration & Regression
 - [ ] **Phase 5**: FPGA Prototype & Timing Closure (Nexys A7)
 - [ ] **Phase 6**: Final Demonstration, Waveform Evidence, & Submission
 - [ ] **Phase 7**: Judge-Driven Iteration / Enhancement

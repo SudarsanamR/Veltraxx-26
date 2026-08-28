@@ -14,7 +14,7 @@
 | `tb/tb_aes_core.v` | `aes_core`, `aes_controller` | 10-Cycle Datapath & NIST KAT Vectors | **PASS** | Icarus / XSIM | `logs/sim_core.log` |
 | `tb/tb_nist_kat_runner.v` | `aes_core` | 284 NIST CAVP Vector Suite | **PASS** (284/284) | Icarus / Python | Terminal / `tb/verify_nist_kat.py` |
 | `tb/tb_axi_mm_slave.v` | `axi_mm_slave`, `aes_registers` | Full AXI4 Bursts, Handshakes & Security | **PASS** (7/7) | Icarus / XSIM | `logs/sim_axi.log` |
-| `tb/tb_aes_axi_top.v` | `aes_axi_top` | End-to-End System, Throughput, & Security | Pending | Icarus / XSIM | `logs/sim_top.log` |
+| `tb/tb_aes_axi_top.v` | `aes_axi_top` | End-to-End System, Throughput, & Security | **PASS** (9/9) | Icarus / XSIM | `logs/sim_top.log` & `outputs/aes_axi_top.vcd` |
 
 ---
 
