@@ -1,0 +1,35 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
+| Date         : Fri Aug 28 21:00:27 2026
+| Host         : lenovo running 64-bit Ubuntu 26.04.1 LTS
+| Command      : report_utilization -hierarchical -file /home/sudar/Documents/Veltraxx/ps06_aes/outputs/post_opt_hier_util.rpt
+| Design       : aes_axi_top
+| Device       : xc7a100tcsg324-1
+| Speed File   : -1
+| Design State : Optimized
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++----------------------------+-----------------------+------------+------------+---------+------+-----+--------+--------+------------+
+|          Instance          |         Module        | Total LUTs | Logic LUTs | LUTRAMs | SRLs | FFs | RAMB36 | RAMB18 | DSP Blocks |
++----------------------------+-----------------------+------------+------------+---------+------+-----+--------+--------+------------+
+| aes_axi_top                |                 (top) |       2416 |       2416 |       0 |    0 | 897 |      0 |      0 |          0 |
+|   (aes_axi_top)            |                 (top) |          0 |          0 |       0 |    0 |   0 |      0 |      0 |          0 |
+|   axi_slave_inst           |          axi_mm_slave |        208 |        208 |       0 |    0 | 368 |      0 |      0 |          0 |
+|     (axi_slave_inst)       |          axi_mm_slave |         62 |         62 |       0 |    0 |  76 |      0 |      0 |          0 |
+|     reg_bank_inst          |         aes_registers |        146 |        146 |       0 |    0 | 292 |      0 |      0 |          0 |
+|   core_inst                |              aes_core |       2208 |       2208 |       0 |    0 | 529 |      0 |      0 |          0 |
+|     (core_inst)            |              aes_core |       1964 |       1964 |       0 |    0 | 529 |      0 |      0 |          0 |
+|     shared_mixcolumns_inst | aes_mixcolumns_shared |        196 |        196 |       0 |    0 |   0 |      0 |      0 |          0 |
++----------------------------+-----------------------+------------+------------+---------+------+-----+--------+--------+------------+
+
+

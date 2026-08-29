@@ -1,0 +1,37 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
+| Date         : Fri Aug 28 17:14:34 2026
+| Host         : lenovo running 64-bit Ubuntu 26.04.1 LTS
+| Command      : report_utilization -hierarchical -file outputs/hierarchical_utilization.rpt
+| Design       : aes_axi_top
+| Device       : xc7a100tcsg324-1
+| Speed File   : -1
+| Design State : Routed
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++----------------------------+---------------------+------------+------------+---------+------+-----+--------+--------+------------+
+|          Instance          |        Module       | Total LUTs | Logic LUTs | LUTRAMs | SRLs | FFs | RAMB36 | RAMB18 | DSP Blocks |
++----------------------------+---------------------+------------+------------+---------+------+-----+--------+--------+------------+
+| aes_axi_top                |               (top) |       3135 |       3135 |       0 |    0 | 898 |      0 |      0 |          0 |
+|   (aes_axi_top)            |               (top) |          0 |          0 |       0 |    0 |   0 |      0 |      0 |          0 |
+|   axi_slave_inst           |        axi_mm_slave |        441 |        441 |       0 |    0 | 505 |      0 |      0 |          0 |
+|     (axi_slave_inst)       |        axi_mm_slave |         67 |         67 |       0 |    0 |  76 |      0 |      0 |          0 |
+|     reg_bank_inst          |       aes_registers |        374 |        374 |       0 |    0 | 429 |      0 |      0 |          0 |
+|   core_inst                |            aes_core |       2694 |       2694 |       0 |    0 | 393 |      0 |      0 |          0 |
+|     (core_inst)            |            aes_core |       1543 |       1543 |       0 |    0 | 384 |      0 |      0 |          0 |
+|     (shared_subbytes_inst) | aes_subbytes_shared |        128 |        128 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     ctrl_inst              |      aes_controller |        596 |        596 |       0 |    0 |   9 |      0 |      0 |          0 |
++----------------------------+---------------------+------------+------------+---------+------+-----+--------+--------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+

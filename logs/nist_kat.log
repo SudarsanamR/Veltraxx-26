@@ -1,0 +1,16 @@
+Loaded 21 ENCRYPT vectors from ECBKeySbox128.rsp
+Loaded 128 ENCRYPT vectors from ECBVarKey128.rsp
+Loaded 128 ENCRYPT vectors from ECBVarTxt128.rsp
+Loaded 7 ENCRYPT vectors from ECBGFSbox128.rsp
+Generated testbench /home/sudar/Documents/Veltraxx/ps06_aes/tb/tb_nist_kat_runner.v with 284 NIST test cases.
+
+==> Compiling and Simulating with Icarus Verilog...
+========================================
+Running NIST CAVP KAT Verification Suite
+========================================
+========================================
+ALL 284 NIST CAVP TESTS PASSED!
+========================================
+/home/sudar/Documents/Veltraxx/ps06_aes/tb/tb_nist_kat_runner.v:352: $finish called at 39785000 (1ps)
+
+==> NIST CAVP Vector Suite Verification Succeeded!

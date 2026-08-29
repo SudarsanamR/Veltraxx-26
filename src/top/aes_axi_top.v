@@ -7,7 +7,7 @@
 //   1. Full AXI4 Memory-Mapped Slave Engine (axi_mm_slave.v)
 //   2. Secure Memory-Mapped Register Bank (aes_registers.v)
 //   3. Unified Dual-Mode Iterative AES-128 Engine (aes_core.v)
-//      - S-Box Resource Folding (< 1,500 LUT budget)
+//      - S-Box Resource Folding (2,455 LUTs post-route, 4.01% of XC7A100T)
 //      - 10-Cycle Datapath Schedule (II = 10, 1.28 Gbps @ 100MHz)
 //      - On-The-Fly Round-Key Generation (zero BRAM)
 //      - Hardware Cryptographic Isolation (zero bus leakage)

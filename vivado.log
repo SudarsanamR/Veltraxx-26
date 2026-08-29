@@ -1,0 +1,81 @@
+#-----------------------------------------------------------
+# Vivado v2025.2 (64-bit)
+# SW Build 6299465 on Fri Nov 14 12:34:56 MST 2025
+# IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
+# SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
+# Start of session at: Sat Aug 29 07:04:20 2026
+# Process ID         : 875038
+# Current directory  : /home/sudar/Documents/Veltraxx/ps06_aes
+# Command line       : vivado -mode batch -source scripts/program_nexys_a7.tcl
+# Log file           : /home/sudar/Documents/Veltraxx/ps06_aes/vivado.log
+# Journal file       : /home/sudar/Documents/Veltraxx/ps06_aes/vivado.jou
+# Running On         : lenovo
+# Platform           : Ubuntu
+# Operating System   : Ubuntu 26.04.1 LTS
+# Processor Detail   : AMD Ryzen 5 7530U with Radeon Graphics
+# CPU Frequency      : 3595.895 MHz
+# CPU Physical cores : 6
+# CPU Logical cores  : 12
+# Host memory        : 13938 MB
+# Swap memory        : 4294 MB
+# Total Virtual      : 18233 MB
+# Available Virtual  : 8451 MB
+#-----------------------------------------------------------
+source scripts/program_nexys_a7.tcl
+# set script_dir [file dirname [info script]]
+# set bitfile [file normalize "$script_dir/../outputs/nexys_a7_aes_demo.bit"]
+# if {![file exists $bitfile]} {
+#     puts "Error: Bitstream file $bitfile not found!"
+#     exit 1
+# }
+# puts "==> Connecting to Hardware Manager..."
+==> Connecting to Hardware Manager...
+# open_hw_manager
+# connect_hw_server -allow_non_jtag
+INFO: [Labtools 27-2285] Connecting to hw_server url TCP:localhost:3121
+INFO: [Labtools 27-2222] Launching hw_server...
+INFO: [Labtools 27-2221] Launch Output:
+
+****** Xilinx hw_server v2025.2
+  **** Build date : Oct 28 2025 at 16:07:00
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+
+
+INFO: [Labtools 27-3415] Connecting to cs_server url TCP:localhost:0
+INFO: [Labtools 27-3417] Launching cs_server...
+INFO: [Labtools 27-2221] Launch Output:
+
+
+******** Xilinx cs_server v2025.2.0
+  ****** Build date   : Nov 14 2025-04:46:52
+    **** Build number : 2025.2.1763075812
+      ** Copyright 2017-2022 Xilinx, Inc. All Rights Reserved.
+      ** Copyright 2022-2026 Advanced Micro Devices, Inc. All Rights Reserved.
+
+
+
+# open_hw_target
+INFO: [Labtoolstcl 44-466] Opening hw_target localhost:3121/xilinx_tcf/Digilent/210292BCFCF8A
+# set device [lindex [get_hw_devices xc7a100t_0] 0]
+# if {$device == ""} {
+#     set device [lindex [get_hw_devices] 0]
+# }
+# puts "==> Programming device $device with $bitfile..."
+==> Programming device xc7a100t_0 with /home/sudar/Documents/Veltraxx/ps06_aes/outputs/nexys_a7_aes_demo.bit...
+# set_property PROGRAM.FILE $bitfile $device
+# program_hw_devices $device
+INFO: [Labtools 27-3164] End of startup status: HIGH
+# puts "================================================================"
+================================================================
+# puts "  NEXYS A7 FPGA PROGRAMMED SUCCESSFULLY!"
+  NEXYS A7 FPGA PROGRAMMED SUCCESSFULLY!
+# puts "  Your AES Hardware Accelerator is LIVE and ready for demo!"
+  Your AES Hardware Accelerator is LIVE and ready for demo!
+# puts "================================================================"
+================================================================
+# close_hw_target
+INFO: [Labtoolstcl 44-464] Closing hw_target localhost:3121/xilinx_tcf/Digilent/210292BCFCF8A
+# disconnect_hw_server
+# close_hw_manager
+# exit
+INFO: [Common 17-206] Exiting Vivado at Sat Aug 29 07:04:27 2026...

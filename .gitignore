@@ -4,9 +4,7 @@ ps06_ai_agent_instructions.md
 # Vivado generated files and directories
 .Xil/
 *.jou
-*.log
 *.str
-*.bit
 *.bin
 *.ltx
 vivado_*
@@ -17,7 +15,6 @@ hw/
 hd_visual/
 *.pb
 *.dcp
-*.rpt
 
 # Simulator build & temporary files (Vivado XSIM, Icarus Verilog)
 xsim.dir/
@@ -35,8 +32,5 @@ __pycache__/
 .venv/
 env/
 
-# Ignore generated outputs/logs except .gitkeep
-outputs/*
-!outputs/.gitkeep
-logs/*
-!logs/.gitkeep
+# Allow all submission evidence in outputs/ and logs/
+# (reports, bitstream, logs are required submission artifacts)

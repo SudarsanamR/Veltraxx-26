@@ -1,0 +1,30 @@
+================================================================
+PS06 Full AXI4-MM Slave & Security Anti-Leakage Verification
+================================================================
+
+--- Test 1: AXI4 Single Register Write & Read ---
+  [PASS] CONFIG register written and read correctly: 0xa5a55a5a
+
+--- Test 2: STATUS Register Verification ---
+  [PASS] STATUS reset value correct: READY=1, BUSY=0, DONE=0 (val=0x00000004)
+
+--- Test 3: Security Check — Write-Only Key Protection ---
+  [PASS] Write-Only Key Protection Verified! All KEY reads strictly return 0x0000_0000.
+
+--- Test 4: Security Check — Unmapped Address Space Isolation ---
+  [PASS] Unmapped Space Isolation Verified! All probe reads returned 0x0000_0000.
+
+--- Test 5: End-to-End NIST Encryption via AXI4 ---
+
+--- Test 6: Security Check — Zero Intermediate Leakage During BUSY ---
+  [PASS] Anti-leakage confirmed during execution: BLOCK_OUT read returned 0x00000000
+  [PASS] Encryption completed! STATUS=0x00000006 (DONE=1, BUSY=0)
+  [PASS] NIST Appendix C.1 Ciphertext Verified via AXI4: 69c4e0d86a7b0430d8cdb78070b4c55a
+
+--- Test 7: End-to-End NIST Decryption via AXI4 ---
+  [PASS] NIST Appendix C.1 Decrypted Plaintext Verified via AXI4: 00112233445566778899aabbccddeeff
+
+================================================================
+ALL 7 AXI4 TESTS & SECURITY CHECKS PASSED PERFECTLY!
+================================================================
+tb/tb_axi_mm_slave.v:585: $finish called at 1286000 (1ps)

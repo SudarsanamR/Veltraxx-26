@@ -1,0 +1,63 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
+| Date         : Fri Aug 28 17:44:56 2026
+| Host         : lenovo running 64-bit Ubuntu 26.04.1 LTS
+| Command      : report_utilization -hierarchical -file /home/sudar/Documents/Veltraxx/ps06_aes/outputs/core_hier_util.rpt
+| Design       : aes_core
+| Device       : xc7a100tcsg324-1
+| Speed File   : -1
+| Design State : Optimized
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++------------------------+---------------------+------------+------------+---------+------+-----+--------+--------+------------+
+|        Instance        |        Module       | Total LUTs | Logic LUTs | LUTRAMs | SRLs | FFs | RAMB36 | RAMB18 | DSP Blocks |
++------------------------+---------------------+------------+------------+---------+------+-----+--------+--------+------------+
+| aes_core               |               (top) |       1757 |       1757 |       0 |    0 | 391 |      0 |      0 |          0 |
+|   (aes_core)           |               (top) |          0 |          0 |       0 |    0 | 384 |      0 |      0 |          0 |
+|   key_exp_inst         |      aes_key_expand |        360 |        360 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb0                |            aes_sbox |        112 |        112 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_36 |        112 |        112 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb1                |         aes_sbox_30 |         84 |         84 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_35 |         84 |         84 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb2                |         aes_sbox_31 |         84 |         84 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_34 |         84 |         84 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb3                |         aes_sbox_32 |         80 |         80 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_33 |         80 |         80 |       0 |    0 |   0 |      0 |      0 |          0 |
+|   shared_subbytes_inst | aes_subbytes_shared |       1383 |       1383 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb1                |   aes_sbox_shared_0 |         93 |         93 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_28 |         93 |         93 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb10               |   aes_sbox_shared_1 |        114 |        114 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_27 |        114 |        114 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb11               |   aes_sbox_shared_2 |         77 |         77 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_26 |         77 |         77 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb13               |   aes_sbox_shared_4 |         85 |         85 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_24 |         85 |         85 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb14               |   aes_sbox_shared_5 |        132 |        132 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_23 |        132 |        132 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb15               |   aes_sbox_shared_6 |         84 |         84 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_22 |         84 |         84 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb2                |   aes_sbox_shared_7 |         81 |         81 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_21 |         81 |         81 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb3                |   aes_sbox_shared_8 |        107 |        107 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_20 |        107 |        107 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb5                |  aes_sbox_shared_10 |         87 |         87 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_18 |         87 |         87 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb6                |  aes_sbox_shared_11 |        132 |        132 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_17 |        132 |        132 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb7                |  aes_sbox_shared_12 |         84 |         84 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |       aes_gf_inv_16 |         84 |         84 |       0 |    0 |   0 |      0 |      0 |          0 |
+|     sb9                |  aes_sbox_shared_14 |        111 |        111 |       0 |    0 |   0 |      0 |      0 |          0 |
+|       gf_inv_inst      |          aes_gf_inv |        111 |        111 |       0 |    0 |   0 |      0 |      0 |          0 |
++------------------------+---------------------+------------+------------+---------+------+-----+--------+--------+------------+
+
+

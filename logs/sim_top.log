@@ -1,0 +1,33 @@
+VCD info: dumpfile outputs/aes_axi_top.vcd opened for output.
+================================================================
+PS06 Full System Integration Testbench (aes_axi_top)
+================================================================
+
+--- Test 1: Register R/W & Status Flags ---
+  [PASS] CONFIG Register R/W Verified: 0x12345678
+  [PASS] STATUS Register Reset Verified: READY=1, DONE=0, BUSY=0 
+
+--- Test 2: Hardware Anti-Leakage Security Verification ---
+  [PASS] Write-Only Key Protection Verified: Secret Key Cannot Be Read via AXI.
+  [PASS] Unmapped Address Space Isolation Verified.
+
+--- Test 3: NIST Appendix C.1 Encryption via Full AXI4 ---
+  [PASS] Gated Output Verified: Zero Intermediate State Leakage During Execution.
+  [PASS] Encryption Completed! STATUS=0x00000006
+  [PASS] NIST Appendix C.1 Ciphertext Verified: 69c4e0d86a7b0430d8cdb78070b4c55a
+
+--- Test 4: NIST Appendix C.1 Decryption via Full AXI4 ---
+  [PASS] NIST Appendix C.1 Decryption Verified: 00112233445566778899aabbccddeeff
+
+--- Test 5: Full Round-Trip Integrity Verification ---
+  [PASS] Decrypt(Encrypt(Plaintext, Key), Key) == Plaintext Round-Trip CONFIRMED!
+
+--- Test 6: 10-Cycle Datapath Throughput Proof ---
+  [INFO] Verifying core-level 10-cycle execution interval (II = 10)...
+  [PASS] Core transformation completes in exactly 10 cycles (1.28 Gbps sustained throughput @ 100MHz).
+
+================================================================
+ALL 9 SYSTEM INTEGRATION & SECURITY TESTS PASSED PERFECTLY!
+System Ready for FPGA Constraints & Synthesis (Phase 5)!
+================================================================
+tb/tb_aes_axi_top.v:554: $finish called at 1066000 (1ps)

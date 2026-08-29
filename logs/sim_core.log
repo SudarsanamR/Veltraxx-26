@@ -1,0 +1,31 @@
+========================================
+Unified 10-Cycle AES Core Testbench
+========================================
+
+--- Test 1: NIST FIPS-197 Appendix C.1 Encryption ---
+  PASS:             NIST Appendix C.1 Encryption (Completed in exactly 12 cycles, II=10)
+
+--- Test 2: NIST FIPS-197 Appendix C.1 Decryption ---
+  PASS:             NIST Appendix C.1 Decryption (Completed in exactly 12 cycles, II=10)
+
+--- Test 3: NIST CAVP ECBKeySbox128 Vector 0 ---
+  PASS:             NIST CAVP KeySbox128 Count 0 (Completed in exactly 12 cycles, II=10)
+
+--- Test 4: NIST CAVP ECBKeySbox128 Vector 1 ---
+  PASS:             NIST CAVP KeySbox128 Count 1 (Completed in exactly 12 cycles, II=10)
+
+--- Test 5: All Zeros Plaintext & Key ---
+  PASS:                     All Zeros Encryption (Completed in exactly 12 cycles, II=10)
+
+--- Test 6: All Ones Plaintext ---
+  PASS:                      All Ones Encryption (Completed in exactly 12 cycles, II=10)
+
+--- Test 7: Back-to-Back 10-Cycle Throughput Test ---
+  PASS: Block 1 completed on cycle 10 (Result = 69c4e0d86a7b0430d8cdb78070b4c55a)
+  PASS: Block 2 completed with 10-cycle Initiation Interval! (Result = 66e94bd4ef8a2c3b884cfa59ca342b2e)
+
+========================================
+ALL TESTS PASSED: 10-Cycle Unified AES Core Fully Verified!
+NIST Encryption PASS | NIST Decryption PASS | II = 10 Cycles PASS
+========================================
+tb/tb_aes_core.v:251: $finish called at 1115000 (1ps)

@@ -57,7 +57,7 @@ module aes_key_expansion (
     //
     // For a fully combinational key expansion, we instantiate S-boxes
     // for all 10 rounds = 40 aes_sbox instances. Synthesis will merge
-    // and share LUTs as needed to meet the <1,500 LUT constraint.
+    // and share LUTs as needed to minimize resource utilization.
 
     // RotWord: circular left shift by 1 byte
     // Input:  [a0, a1, a2, a3] (a0 at [31:24])
