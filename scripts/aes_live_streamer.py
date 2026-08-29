@@ -386,12 +386,7 @@ class AesFpgaStreamer:
         except ImportError:
             pass
 
-        if cpu_backend is None:
-            try:
-                from Crypto.Cipher import AES as PyCryptoAES
-                cpu_backend = "pycryptodome"
-            except ImportError:
-                pass
+        # pycryptodome fallback removed — cryptography (above) is confirmed available
 
         print()
         print("=" * 65)
@@ -439,15 +434,7 @@ class AesFpgaStreamer:
                 t1 = time.perf_counter()
                 cpu_times_us.append((t1 - t0) * 1e6)
 
-        elif cpu_backend == "pycryptodome":
-            from Crypto.Cipher import AES as PyCryptoAES
-            for _ in range(5):
-                PyCryptoAES.new(KEY_BYTES, PyCryptoAES.MODE_ECB).encrypt(BLOCK_BYTES)
-            for _ in range(N):
-                t0 = time.perf_counter()
-                PyCryptoAES.new(KEY_BYTES, PyCryptoAES.MODE_ECB).encrypt(BLOCK_BYTES)
-                t1 = time.perf_counter()
-                cpu_times_us.append((t1 - t0) * 1e6)
+
 
         else:
             # Pure-Python fallback (slow, but honest)
